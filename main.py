@@ -31,14 +31,18 @@ def update_history(luce_rank, gas_rank):
 def main():
     print("Inizio raccolta dati...")
 
-    luce_rank = get_offer_rank(URL_LUCE, BRAND_NAME)
-    gas_rank = get_offer_rank(URL_GAS, BRAND_NAME)
+    luce_url = "https://tariffe.segugio.it/costo-energia-elettrica/ricerca-offerte-energia-elettrica.aspx?consumo=2000"
+    gas_url = "https://tariffe.segugio.it/costo-gas-metano/ricerca-offerte-gas-metano.aspx?consumo=1000"
+
+    luce_rank = get_offer_rank(luce_url, "a2a click luce")
+    gas_rank = get_offer_rank(gas_url, "a2a click gas")
 
     print(f"Ranking Luce: {luce_rank}, Ranking Gas: {gas_rank}")
 
     df = update_history(luce_rank, gas_rank)
 
-    plot_trend(df)
+    # ✅ Fix: aggiungi il secondo argomento
+    plot_trend(df, "charts/trend_ranking.png")
 
 if __name__ == "__main__":
     main()
