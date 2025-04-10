@@ -1,0 +1,31 @@
+name: Esegui scraping e aggiornamento manuale
+
+# Attiva il workflow solo su richiesta manuale
+on:
+  workflow_dispatch:
+
+jobs:
+  scrape_and_update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run main script
+        run: python main.py
+
+      - name: Commit and push updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/offers_history.csv charts/trend_ranking.png || true
+          git commit -m "Aggiornamento manuale $(date)" || echo "Nessuna modifica da committare"
+          git push
