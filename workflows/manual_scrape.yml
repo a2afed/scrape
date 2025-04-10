@@ -1,14 +1,14 @@
-name: Esegui scraping e aggiornamento manuale
+name: Scraping con Selenium
 
-# Attiva il workflow solo su richiesta manuale
 on:
   workflow_dispatch:
 
 jobs:
-  scrape_and_update:
+  scrape:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -17,15 +17,28 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
 
-      - name: Run main script
+      - name: Install Chrome e ChromeDriver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt --fix-broken install -y
+          CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
+          wget -O chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip"
+          unzip chromedriver.zip
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+
+      - name: Esegui scraping
         run: python main.py
 
-      - name: Commit and push updates
+      - name: Commit e push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/offers_history.csv charts/trend_ranking.png || true
-          git commit -m "Aggiornamento manuale $(date)" || echo "Nessuna modifica da committare"
+          git commit -m "Aggiornamento ranking via Selenium" || echo "Nessuna modifica"
           git push
