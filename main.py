@@ -1,43 +1,44 @@
-import os
 import pandas as pd
-from datetime import datetime
-from scraper import get_offer_ranking
-from chart import load_data, save_data, plot_trend
+import datetime
+from scraper import get_offer_rank
+from chart import plot_trend
 
-# Percorsi dei file
-DATA_DIR = "data"
-CSV_PATH = os.path.join(DATA_DIR, "offers_history.csv")
-CHART_PATH = os.path.join("charts", "trend_ranking.png")
+# URL dei comparatori con i filtri richiesti
+URL_LUCE = "https://tariffe.segugio.it/costo-energia-elettrica/ricerca-offerte-energia-elettrica.aspx"
+URL_GAS = "https://tariffe.segugio.it/costo-gas-metano/ricerca-offerte-gas-metano.aspx"
+BRAND_NAME = "A2A"
 
-def update_history(luce_rank: int, gas_rank: int):
-    """Aggiorna il file CSV con i nuovi dati."""
-    # Carica i dati esistenti, o creane uno nuovo se il file non esiste
-    df = load_data(CSV_PATH)
-    
-    # Nuova riga da aggiungere
+DATA_PATH = "data/offers_history.csv"
+
+def update_history(luce_rank, gas_rank):
+    today = datetime.date.today().isoformat()
     new_entry = {
-        "data": datetime.now().strftime("%Y-%m-%d"),
+        "date": today,
         "luce_rank": luce_rank,
         "gas_rank": gas_rank
     }
-    df = df.append(new_entry, ignore_index=True)
-    
-    # Ordina per data
-    df["data"] = pd.to_datetime(df["data"])
-    df = df.sort_values("data")
-    
-    # Salva i dati aggiornati
-    os.makedirs(DATA_DIR, exist_ok=True)
-    save_data(df, CSV_PATH)
-    print("Dati aggiornati nel CSV.")
+
+    try:
+        df = pd.read_csv(DATA_PATH)
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=["date", "luce_rank", "gas_rank"])
+
+    df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+    df.to_csv(DATA_PATH, index=False)
+
+    return df
 
 def main():
     print("Inizio raccolta dati...")
-    luce_rank, gas_rank = get_offer_ranking()
+
+    luce_rank = get_offer_rank(URL_LUCE, BRAND_NAME)
+    gas_rank = get_offer_rank(URL_GAS, BRAND_NAME)
+
     print(f"Ranking Luce: {luce_rank}, Ranking Gas: {gas_rank}")
-    
-    update_history(luce_rank, gas_rank)
-    plot_trend(CSV_PATH, CHART_PATH)
+
+    df = update_history(luce_rank, gas_rank)
+
+    plot_trend(df)
 
 if __name__ == "__main__":
     main()
